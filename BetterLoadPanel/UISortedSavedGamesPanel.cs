@@ -26,9 +26,15 @@ namespace BetterLoadPanel
       public string SaveName;
       public string CityName;
       public DateTime SaveTimestamp;
-      
+      public bool IsSteam;
+
       // also, keep filename so we can launch easily later
       public string PathOnDisk;     //!! this may not be available from Package.Asset
+
+      public string SaveNameForCompare
+      {
+         get { return IsSteam ? "_steam_"+SaveName : SaveName; }
+      }
 
       public SaveGameRowStruct()
       {
@@ -42,6 +48,11 @@ namespace BetterLoadPanel
          PathOnDisk = asset.pathOnDisk;
          
          saveMeta = sgmd;
+
+         if (saveMeta != null && saveMeta.assetRef != null && saveMeta.assetRef.package != null && PackageManager.IsSteamCloudPath(saveMeta.assetRef.package.packagePath))
+         {
+            IsSteam = true;
+         }
       }
 
 
@@ -52,7 +63,7 @@ namespace BetterLoadPanel
          if (other == null)
             return 1;
          else
-            return this.SaveName.CompareTo(other.SaveName);
+            return this.SaveNameForCompare.CompareTo(other.SaveNameForCompare);         
       }
 
       public static int SortBySaveNameAscending(SaveGameRowStruct struct1, SaveGameRowStruct struct2)
@@ -68,8 +79,8 @@ namespace BetterLoadPanel
          {
             if (struct2 == null)
                return 1;
-            else            
-               return struct1.SaveName.CompareTo(struct2.SaveName);            
+            else
+               return struct1.SaveNameForCompare.CompareTo(struct2.SaveNameForCompare);            
          }
       }
 
@@ -87,7 +98,7 @@ namespace BetterLoadPanel
             if (struct2 == null)
                return 1;
             else
-               return struct2.SaveName.CompareTo(struct1.SaveName);
+               return struct2.SaveNameForCompare.CompareTo(struct1.SaveNameForCompare);
          }
       }
 
@@ -168,7 +179,7 @@ namespace BetterLoadPanel
       public bool Equals(SaveGameRowStruct other)
       {
          if (other == null) return false;
-         return (this.SaveName.Equals(other.SaveName));
+         return (this.SaveNameForCompare.Equals(other.SaveNameForCompare));
       }
    }
 
@@ -419,14 +430,30 @@ namespace BetterLoadPanel
       {
          LoadSaveInformation();
 
-         //SetSortingMode(ColumnSortingMode.TimestampDescending);
-         // start with time descending
-         SetSortingMode(SortAsc_Timestamp, SortingMode.SortDescending);
-         SetSortingMode(SortAsc_SaveName, SortingMode.NotSorting);
-         SetSortingMode(SortAsc_CityName, SortingMode.NotSorting);
+         SetSortingMode(CurrentSortingMode);
 
          // do the actual sort and update the list
-         GamesList.Sort(SaveGameRowStruct.SortByTimestampDescending);
+         switch (CurrentSortingMode)
+         {
+            case ColumnSortingMode.CityNameAscending:
+               GamesList.Sort(SaveGameRowStruct.SortByCityNameAscending);
+               break;
+            case ColumnSortingMode.CityNameDescending:
+               GamesList.Sort(SaveGameRowStruct.SortByCityNameDescending);
+               break;
+            case ColumnSortingMode.SaveNameAscending:
+               GamesList.Sort(SaveGameRowStruct.SortBySaveNameAscending);
+               break;
+            case ColumnSortingMode.SaveNameDescending:
+               GamesList.Sort(SaveGameRowStruct.SortBySaveNameDescending);
+               break;
+            case ColumnSortingMode.TimestampAscending:
+               GamesList.Sort(SaveGameRowStruct.SortByTimestampAscending);
+               break;
+            case ColumnSortingMode.TimestampDescending:
+               GamesList.Sort(SaveGameRowStruct.SortByTimestampDescending);
+               break;
+         }
 
          InitSavesListUI(SavesPanel);
 
@@ -475,8 +502,6 @@ namespace BetterLoadPanel
          if (index < 0 || index >= GamesList.Count)
             return;
 
-         if (index == CurrentSelected)
-            return;
 
          SaveGameRowStruct currentStruct = GamesList[CurrentSelected];
 
@@ -603,6 +628,12 @@ namespace BetterLoadPanel
             row.SaveLabel.relativePosition = Vector3.zero;
             row.SaveLabel.width = thirds;
             row.SaveLabel.padding = new RectOffset(3, 3, 0, 0);
+            
+            if (row.IsSteam)
+            {
+               row.SaveLabel.processMarkup = true;
+               row.SaveLabel.text = "<sprite SteamCloud> " + row.SaveLabel.text;
+            }
 
             row.CityLabel = rowPanel.AddUIComponent<UILabel>();
             row.CityLabel.text = row.CityName;
@@ -693,29 +724,16 @@ namespace BetterLoadPanel
          if (button == null)
             return;
 
-         SortingMode mode = GetSortingMode(button);
-
-         if (mode == SortingMode.NotSorting)
+         if (CurrentSortingMode == ColumnSortingMode.SaveNameAscending)
          {
-            SetSortingMode(button, SortingMode.SortAscending);
-         }
-         else if (mode == SortingMode.SortAscending)
-         {
-            SetSortingMode(button, SortingMode.SortDescending);
-         }
-         else
-         {
-            SetSortingMode(button, SortingMode.SortAscending);
-         }
-
-         SetSortingMode(SortAsc_CityName, SortingMode.NotSorting);
-         SetSortingMode(SortAsc_Timestamp, SortingMode.NotSorting);
-
-         // do the actual sort and update the list
-         if (GetSortingMode(button) == SortingMode.SortAscending)
-            GamesList.Sort(SaveGameRowStruct.SortBySaveNameAscending);
-         else
+            SetSortingMode(ColumnSortingMode.SaveNameDescending);
             GamesList.Sort(SaveGameRowStruct.SortBySaveNameDescending);
+         }
+         else
+         {
+            SetSortingMode(ColumnSortingMode.SaveNameAscending);
+            GamesList.Sort(SaveGameRowStruct.SortBySaveNameAscending);
+         }
 
          InitSavesListUI(SavesPanel);
       }
@@ -727,29 +745,16 @@ namespace BetterLoadPanel
          if (button == null)
             return;
 
-         SortingMode mode = GetSortingMode(button);
-
-         if (mode == SortingMode.NotSorting)
+         if (CurrentSortingMode == ColumnSortingMode.CityNameAscending)
          {
-            SetSortingMode(button, SortingMode.SortAscending);
-         }
-         else if (mode == SortingMode.SortAscending)
-         {
-            SetSortingMode(button, SortingMode.SortDescending);
-         }
-         else
-         {
-            SetSortingMode(button, SortingMode.SortAscending);
-         }
-
-         SetSortingMode(SortAsc_SaveName, SortingMode.NotSorting);
-         SetSortingMode(SortAsc_Timestamp, SortingMode.NotSorting);
-
-         // do the actual sort and update the list
-         if (GetSortingMode(button) == SortingMode.SortAscending)
-            GamesList.Sort(SaveGameRowStruct.SortByCityNameAscending);
-         else
+            SetSortingMode(ColumnSortingMode.CityNameDescending);
             GamesList.Sort(SaveGameRowStruct.SortByCityNameDescending);
+         }
+         else
+         {
+            SetSortingMode(ColumnSortingMode.CityNameAscending);
+            GamesList.Sort(SaveGameRowStruct.SortByCityNameAscending);
+         }
 
          InitSavesListUI(SavesPanel);
       }
@@ -761,83 +766,86 @@ namespace BetterLoadPanel
          if (button == null)
             return;
 
-         SortingMode mode = GetSortingMode(button);
-
-         if (mode == SortingMode.NotSorting)
+         if (CurrentSortingMode == ColumnSortingMode.TimestampAscending)
          {
-            SetSortingMode(button, SortingMode.SortAscending);
-         }
-         else if (mode == SortingMode.SortAscending)
-         {
-            SetSortingMode(button, SortingMode.SortDescending);
-         }
-         else
-         {
-            SetSortingMode(button, SortingMode.SortAscending);
-         }
-
-         SetSortingMode(SortAsc_SaveName, SortingMode.NotSorting);
-         SetSortingMode(SortAsc_CityName, SortingMode.NotSorting);
-
-         // do the actual sort and update the list
-         if (GetSortingMode(button) == SortingMode.SortAscending)
-            GamesList.Sort(SaveGameRowStruct.SortByTimestampAscending);
-         else
+            SetSortingMode(ColumnSortingMode.TimestampDescending);
             GamesList.Sort(SaveGameRowStruct.SortByTimestampDescending);
+         }
+         else
+         {
+            SetSortingMode(ColumnSortingMode.TimestampAscending);
+            GamesList.Sort(SaveGameRowStruct.SortByTimestampAscending);
+         }
 
          InitSavesListUI(SavesPanel);
       }
 
       public void SetSortingMode(ColumnSortingMode mode)
       {
+         CurrentSortingMode = mode;
 
+         switch (mode)
+         {
+            case ColumnSortingMode.CityNameAscending:
+               SortAsc_SaveName.normalFgSprite = "IconUpArrowDisabled";
+               SortAsc_CityName.normalFgSprite = "IconUpArrowFocused";
+               SortAsc_Timestamp.normalFgSprite = "IconUpArrowDisabled";
+
+               SortAsc_SaveName.hoveredFgSprite = "IconDownArrowFocused";
+               SortAsc_CityName.hoveredFgSprite = "IconDownArrowFocused";
+               SortAsc_Timestamp.hoveredFgSprite = "IconDownArrowFocused";
+               break;
+            case ColumnSortingMode.CityNameDescending:
+               SortAsc_SaveName.normalFgSprite = "IconUpArrowDisabled";
+               SortAsc_CityName.normalFgSprite = "IconDownArrowFocused";
+               SortAsc_Timestamp.normalFgSprite = "IconUpArrowDisabled";
+
+               SortAsc_SaveName.hoveredFgSprite = "IconDownArrowFocused";
+               SortAsc_CityName.hoveredFgSprite = "IconUpArrowFocused";
+               SortAsc_Timestamp.hoveredFgSprite = "IconDownArrowFocused";
+               break;
+            case ColumnSortingMode.SaveNameAscending:
+               SortAsc_SaveName.normalFgSprite = "IconUpArrowFocused";
+               SortAsc_CityName.normalFgSprite = "IconUpArrowDisabled";
+               SortAsc_Timestamp.normalFgSprite = "IconUpArrowDisabled";
+
+               SortAsc_SaveName.hoveredFgSprite = "IconDownArrowFocused";
+               SortAsc_CityName.hoveredFgSprite = "IconDownArrowFocused";
+               SortAsc_Timestamp.hoveredFgSprite = "IconDownArrowFocused";
+               break;
+            case ColumnSortingMode.SaveNameDescending:
+               SortAsc_SaveName.normalFgSprite = "IconDownArrowFocused";
+               SortAsc_CityName.normalFgSprite = "IconUpArrowDisabled";
+               SortAsc_Timestamp.normalFgSprite = "IconUpArrowDisabled";
+
+               SortAsc_SaveName.hoveredFgSprite = "IconUpArrowFocused";
+               SortAsc_CityName.hoveredFgSprite = "IconDownArrowFocused";
+               SortAsc_Timestamp.hoveredFgSprite = "IconDownArrowFocused";
+               break;
+            case ColumnSortingMode.TimestampAscending:
+               SortAsc_SaveName.normalFgSprite = "IconUpArrowDisabled";
+               SortAsc_CityName.normalFgSprite = "IconUpArrowDisabled";
+               SortAsc_Timestamp.normalFgSprite = "IconUpArrowFocused";
+
+               SortAsc_SaveName.hoveredFgSprite = "IconDownArrowFocused";
+               SortAsc_CityName.hoveredFgSprite = "IconDownArrowFocused";
+               SortAsc_Timestamp.hoveredFgSprite = "IconDownArrowFocused";
+               break;
+            case ColumnSortingMode.TimestampDescending:
+               SortAsc_SaveName.normalFgSprite = "IconUpArrowDisabled";
+               SortAsc_CityName.normalFgSprite = "IconUpArrowDisabled";
+               SortAsc_Timestamp.normalFgSprite = "IconDownArrowFocused";
+
+               SortAsc_SaveName.hoveredFgSprite = "IconDownArrowFocused";
+               SortAsc_CityName.hoveredFgSprite = "IconDownArrowFocused";
+               SortAsc_Timestamp.hoveredFgSprite = "IconUpArrowFocused";
+               break;
+         }
       }
 
       public ColumnSortingMode GetSortingMode()
       {
          return CurrentSortingMode;
-      }
-
-      public void SetSortingMode(UIButton button, SortingMode mode)
-      {
-         switch( mode)
-         {
-            case SortingMode.NotSorting:
-               button.normalFgSprite = "IconUpArrowDisabled";
-               button.hoveredFgSprite = "IconUpArrowFocused";
-               break;
-            case SortingMode.SortAscending:
-               button.normalFgSprite = "IconUpArrowFocused";
-               button.hoveredFgSprite = "IconDownArrowFocused";
-               break;
-            case SortingMode.SortDescending:
-               button.normalFgSprite = "IconDownArrowFocused";
-               button.hoveredFgSprite = "IconUpArrowFocused";
-               break;
-         }
-      }
-
-      public SortingMode GetSortingMode(UIButton button)
-      {
-         if (button.normalFgSprite == "IconUpArrowFocused")
-         {
-            return SortingMode.SortAscending;
-         }
-         else if (button.normalFgSprite == "IconDownArrowFocusted")
-         {
-            return SortingMode.SortDescending;
-         }
-         else
-         {
-            return SortingMode.NotSorting;
-         }
-      }
-
-      public enum SortingMode
-      {
-         NotSorting = 0,
-         SortAscending = 1,
-         SortDescending = 2
       }
 
       public enum ColumnSortingMode

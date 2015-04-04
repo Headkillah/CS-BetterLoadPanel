@@ -339,7 +339,6 @@ namespace BetterLoadPanel
                   if (visible)
                   {
                      PanelWrapperForPauseMenu.Refresh(); //need to ensure up to date
-                     PanelWrapperForPauseMenu.CenterToParent();
                      PanelWrapperForPauseMenu.Focus();
                      //DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "eventvisibilitychanged1");
                   }

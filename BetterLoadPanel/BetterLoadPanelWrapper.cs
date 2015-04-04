@@ -19,6 +19,7 @@ namespace BetterLoadPanel
       public UISortedSavedGamesPanel ListPanel;
       public UILoadPanelDetails DetailsPanel;
       private UIResizeHandle ResizeHandle;
+      private Vector3 CurrentRelativePosition = Vector3.zero;
 
       public void Initialize()
       {
@@ -47,11 +48,17 @@ namespace BetterLoadPanel
          //this.autoLayoutPadding = new RectOffset(0, 0, 1, 1);
          //this.autoLayoutStart = LayoutStart.TopLeft;
 
-         //this.position = new Vector3(0, 0, 0);//test// new Vector3((-viewWidth / 2), (viewHeight / 2));
-         this.useCenter = true;
-         this.CenterToParent();
-         this.useCenter = false;
-         //testing tempsize
+         if (CurrentRelativePosition == Vector3.zero)
+         {
+            this.useCenter = true;
+            this.CenterToParent();
+            this.useCenter = false;
+            CurrentRelativePosition = this.relativePosition;
+         }
+         else
+         {
+            this.relativePosition = CurrentRelativePosition;
+         }
 
          this.minimumSize = new Vector2(1170, 450);
 
@@ -121,6 +128,13 @@ namespace BetterLoadPanel
 
          //Invalidate();
       }
+
+      protected override void OnPositionChanged()
+      {
+         base.OnPositionChanged();
+         CurrentRelativePosition = this.relativePosition;
+      }
+
       public void LocaleChange()
       {
          TitleSubPanel.LocaleChange();

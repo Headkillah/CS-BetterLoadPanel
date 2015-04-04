@@ -27,6 +27,9 @@ namespace BetterLoadPanel
       public UISprite AchSprite;
       public UISprite TrophySprite;
 
+      private float SnapshotMaxWidth;
+      private float SnapshotMaxHeight;
+
       // runs only once, do internal init here
       public override void Awake()
       {
@@ -90,9 +93,11 @@ namespace BetterLoadPanel
          CancelButton.isInteractive = true;
 
          Snapshot.relativePosition = new Vector3(inset, inset, 0);
-         Snapshot.autoSize = true;
-         //Snapshot.width = this.width - 2 * inset;
-         //Snapshot.height = this.height - 4*inset - LoadButton.height;
+         //Snapshot.autoSize = true;         
+         Snapshot.width = this.width - 2 * inset;
+         Snapshot.height = this.height - 4*inset - LoadButton.height;
+         SnapshotMaxHeight = Snapshot.height;
+         SnapshotMaxWidth = Snapshot.width;
 
          //TrophySprite.autoSize = true;
          TrophySprite.spriteName = "ThumbnailTrophy";
@@ -101,6 +106,7 @@ namespace BetterLoadPanel
          TrophySprite.fillAmount = 1;
          TrophySprite.width = 32;
          TrophySprite.height = 32;
+         
          TrophySprite.relativePosition = new Vector3(inset, LoadButton.relativePosition.y - 5 - TrophySprite.height);
 
          //AchSprite.autoSize = true;
@@ -110,6 +116,7 @@ namespace BetterLoadPanel
          AchSprite.fillAmount = 1;
          AchSprite.width = 32;
          AchSprite.height = 32;
+         
          AchSprite.relativePosition = new Vector3(TrophySprite.relativePosition.x, TrophySprite.relativePosition.y, 0);
       }
 
@@ -119,6 +126,13 @@ namespace BetterLoadPanel
          LoadButton.relativePosition = new Vector3(inset, this.height - inset - LoadButton.height);
          CancelButton.relativePosition = new Vector3(LoadButton.relativePosition.x + LoadButton.width + inset, LoadButton.relativePosition.y, 0);
          Snapshot.relativePosition = new Vector3(inset, inset, 0);
+
+         Snapshot.width = this.width - 2 * inset;
+         Snapshot.height = this.height - 4 * inset - LoadButton.height;
+         SnapshotMaxHeight = Snapshot.height;
+         SnapshotMaxWidth = Snapshot.width;
+         RecalculateSnapshotSize();
+
          TrophySprite.relativePosition = new Vector3(inset, LoadButton.relativePosition.y - 5 - TrophySprite.height);
          AchSprite.relativePosition = new Vector3(TrophySprite.relativePosition.x, TrophySprite.relativePosition.y, 0);
 
@@ -139,6 +153,28 @@ namespace BetterLoadPanel
          AchSprite.relativePosition = new Vector3(TrophySprite.relativePosition.x, TrophySprite.relativePosition.y, 0);
       }
 
+      public void RecalculateSnapshotSize()
+      {
+         if (Snapshot != null && Snapshot.texture != null)
+         {
+            float texwidth = Snapshot.texture.width;
+            float texheight = Snapshot.texture.height;
+
+            // calculate new size while keeping aspect ratio the same
+            float ratioX = SnapshotMaxWidth / texwidth;
+            float ratioY = SnapshotMaxHeight / texheight;
+
+            // use whichever multiplier is smaller
+            float ratio = Math.Min(ratioX, ratioY);
+
+            float newWidth = texwidth * ratio;
+            float newHeight = texheight * ratio;
+
+            Snapshot.width = newWidth;
+            Snapshot.height = newHeight;
+         }
+      }
+
       public void SetSelected(SaveGameRowStruct sgrs)
       {
          if (Snapshot.texture != null)
@@ -148,8 +184,10 @@ namespace BetterLoadPanel
 
          if (sgrs.saveMeta.imageRef != null)
          {            
-            Snapshot.texture = sgrs.saveMeta.imageRef.Instantiate<Texture>();
+            Texture newtex = sgrs.saveMeta.imageRef.Instantiate<Texture>();
+            Snapshot.texture = newtex;
             Snapshot.texture.wrapMode = TextureWrapMode.Clamp;
+            RecalculateSnapshotSize();
          }
          else
          {
@@ -158,12 +196,12 @@ namespace BetterLoadPanel
 
          AchSprite.isVisible = Singleton<PluginManager>.instance.enabledModCount > 0 || sgrs.saveMeta.achievementsDisabled || sgrs.saveMeta.assetRef.package.GetPublishedFileID() != PublishedFileId.invalid;
 
-         // use new modinfo to show mods active when save was made (?)
-         foreach (ModInfo mi in sgrs.saveMeta.mods)
-         {
-            //mi.modName;
-            //mi.modWorkshopID;
-         }
+         //// use new modinfo to show mods active when save was made (?)
+         //foreach (ModInfo mi in sgrs.saveMeta.mods)
+         //{
+         //   //mi.modName;
+         //   //mi.modWorkshopID;
+         //}
       }
    }
 }
