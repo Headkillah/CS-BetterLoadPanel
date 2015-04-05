@@ -257,21 +257,20 @@ namespace BetterLoadPanel
                // get rid of click handler that is hooked up as a result of cloning.  Note - probably not necessary, the issue was in the name and cachedname of the new button...
                RemoveClickEvent(newButton);
 
+               PanelWrapper.eventVisibilityChanged += (component, visible) =>
+               {
+                  if (visible)
+                  {
+                     PanelWrapper.Refresh(); //need to ensure up to date
+                     PanelWrapper.Focus();
+                  }
+               };
+
                // hook up our click handler
                newButton.eventClick += (component, param) => { PanelWrapper.Show(true); };
 
                mmUIComp.PerformLayout();
-
-               //DebugOutputPanel.AddMessage(ColossalFramework.Plugins.PluginManager.MessageType.Message, "BetterLoadPanel enabled");
             }
-            else
-            {
-               //DebugOutputPanel.AddMessage(ColossalFramework.Plugins.PluginManager.MessageType.Message, "could not find button called LoadGame");
-            }
-         }
-         else
-         {
-            //DebugOutputPanel.AddMessage(ColossalFramework.Plugins.PluginManager.MessageType.Message, "didn't find main menu");
          }
       }
 
@@ -339,54 +338,17 @@ namespace BetterLoadPanel
                   if (visible)
                   {
                      PanelWrapperForPauseMenu.Refresh(); //need to ensure up to date
-                     PanelWrapperForPauseMenu.Focus();
-                     //DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "eventvisibilitychanged1");
+                     PanelWrapperForPauseMenu.Focus();                     
                   }
-                  else
-                  {
-                     ////UIView.library.Hide(this.GetType().Name, -1);
-                     //UIView.PopModal(-1);
-                     //UIView.GetModalComponent().Focus();
-
-                     //DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "eventvisibilitychanged2");
-                  }
-                  //if (UIView.GetModalComponent() == PanelWrapperForPauseMenu)
-                  //{
-                  //   UIView.PopModal();
-                  //}
                };
 
                // hook up our click handler
                newButton.eventClick += (component, param) =>
                {
-                  //DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "eventclick1");
-                  //UIView.PushModal(PanelWrapperForPauseMenu, (UIView.ModalPoppedReturnCallback)((comp, ret) =>
-                  //{
-                  //   DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "eventclick2");
-                  //   if (ret != 1)
-                  //      return;
-                  //   DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "eventclick3");
-                  //   UIView.library.Hide(typeof(PauseMenu).Name, -1);
-                  //}));
-
                   UIView.library.Hide(typeof(PauseMenu).Name);
-                  //DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "eventclick4");
                   PanelWrapperForPauseMenu.Show(true);
-                  
                };
-
-               //pMenu.PerformLayout();
-
-               //DebugOutputPanel.AddMessage(ColossalFramework.Plugins.PluginManager.MessageType.Message, "BetterLoadPanel enabled");
             }
-            else
-            {
-               //DebugOutputPanel.AddMessage(ColossalFramework.Plugins.PluginManager.MessageType.Message, "could not find button called LoadGame in pause menu");
-            }
-         }
-         else
-         {
-            //DebugOutputPanel.AddMessage(ColossalFramework.Plugins.PluginManager.MessageType.Message, "didn't find pause menu");
          }
       }
 

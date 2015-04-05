@@ -195,6 +195,7 @@ namespace BetterLoadPanel
          }
 
          AchSprite.isVisible = Singleton<PluginManager>.instance.enabledModCount > 0 || sgrs.saveMeta.achievementsDisabled || sgrs.saveMeta.assetRef.package.GetPublishedFileID() != PublishedFileId.invalid;
+         AchSprite.Invalidate();
 
          //// use new modinfo to show mods active when save was made (?)
          //foreach (ModInfo mi in sgrs.saveMeta.mods)
